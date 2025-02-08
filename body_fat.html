@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Body Fat Percentage Calculator</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 20px;
+            }
+            label {
+                display: block;
+                margin-top: 10px;
+            }
+            input {
+                margin-bottom: 10px;
+            }
+            button {
+                margin-top: 10px;
+            }
+            .result {
+                margin-top: 20px;
+                font-weight: bold;
+            }
+        </style>
+    </head>
+    <body>
+        <h1 id="title">Body Fat Percentage Calculator</h1>
+        <form id="bfp-form">
+            <label for="language">Language:</label>
+            <select id="language" required>
+                <option value="en">English</option>
+                <option value="es">Español</option>
+            </select>
+
+            <label for="sex">Sex:</label>
+            <select id="sex" required>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+            </select>
+
+            <label for="age">Age (years):</label>
+            <input type="number" id="age" required />
+
+            <label for="height">Height (centimeters):</label>
+            <input type="number" id="height" required />
+
+            <label for="weight">Weight (kilograms):</label>
+            <input type="number" id="weight" required />
+
+            <label for="neck">Neck Circumference (centimeters):</label>
+            <input type="number" id="neck" required />
+
+            <label for="waist">Waist Circumference (centimeters):</label>
+            <input type="number" id="waist" required />
+
+            <label for="hip"
+                >Hip Circumference (centimeters, only for females):</label
+            >
+            <input type="number" id="hip" style="display: none" />
+
+            <button type="submit" id="calculateBtn">
+                Calculate Body Fat %
+            </button>
+        </form>
+
+        <div class="result" id="result"></div>
+
+        <script>
+            const form = document.getElementById("bfp-form");
+            const resultDiv = document.getElementById("result");
+            const sexSelect = document.getElementById("sex");
+            const hipInput = document.getElementById("hip");
+            const languageSelect = document.getElementById("language");
+
+            // Show/hide hip input based on sex
+            sexSelect.addEventListener("change", () => {
+                hipInput.style.display =
+                    sexSelect.value === "female" ? "block" : "none";
+            });
+
+            // Language change handler
+            languageSelect.addEventListener("change", () => {
+                updateLanguage();
+            });
+
+            // Update the UI based on the selected language
+            function updateLanguage() {
+                const isEnglish = languageSelect.value === "en";
+                document.getElementById("title").innerText = isEnglish
+                    ? "Body Fat Percentage Calculator"
+                    : "Calculadora de Porcentaje de Grasa Corporal";
+
+                const labels = {
+                    language: isEnglish ? "Language:" : "Idioma:",
+                    sex: isEnglish ? "Sex:" : "Sexo:",
+                    age: isEnglish ? "Age (years):" : "Edad (años):",
+                    height: isEnglish
+                        ? "Height (centimeters):"
+                        : "Altura (centímetros):",
+                    weight: isEnglish
+                        ? "Weight (kilograms):"
+                        : "Peso (kilogramos):",
+                    neck: isEnglish
+                        ? "Neck Circumference (centimeters):"
+                        : "Circunferencia del Cuello (centímetros):",
+                    waist: isEnglish
+                        ? "Waist Circumference (centimeters):"
+                        : "Circunferencia de la Cintura (centímetros):",
+                    hip: isEnglish
+                        ? "Hip Circumference (centimeters, only for females):"
+                        : "Circunferencia de la Cadera (centímetros, solo para mujeres):",
+                    calculate: isEnglish
+                        ? "Calculate Body Fat %"
+                        : "Calcular % de Grasa Corporal",
+                };
+
+                Object.keys(labels).forEach((key) => {
+                    document.querySelector(`label[for="${key}"]`).innerText =
+                        labels[key];
+                });
+                document.getElementById("calculateBtn").innerText =
+                    labels.calculate;
+            }
+
+            form.addEventListener("submit", (e) => {
+                e.preventDefault();
+
+                const sex = sexSelect.value;
+                const age = parseFloat(document.getElementById("age").value);
+                const height = parseFloat(
+                    document.getElementById("height").value,
+                );
+                const weight = parseFloat(
+                    document.getElementById("weight").value,
+                );
+                const neck = parseFloat(document.getElementById("neck").value);
+                const waist = parseFloat(
+                    document.getElementById("waist").value,
+                );
+                const hip =
+                    sex === "female"
+                        ? parseFloat(document.getElementById("hip").value)
+                        : 0;
+
+                // Calculate Body Fat Percentage using U.S. Navy Method
+                let bodyFatPercentage;
+
+                if (sex === "male") {
+                    bodyFatPercentage =
+                        86.01 * Math.log10(waist - neck) -
+                        70.041 * Math.log10(height) +
+                        36.76;
+                } else {
+                    bodyFatPercentage =
+                        163.205 * Math.log10(waist + hip - neck) -
+                        97.684 * Math.log10(height) -
+                        78.387;
+                }
+
+                // Calculate Body Fat Mass
+                const bodyFatMass = (bodyFatPercentage / 100) * weight;
+
+                // Calculate Lean Body Mass
+                const leanBodyMass = weight - bodyFatMass;
+
+                // Calculate Ideal Body Fat for Given Age (Jackson & Pollock)
+                const idealBodyFat =
+                    sex === "male" ? 0.1 * age + 10 : 0.1 * age + 20;
+
+                // Calculate Body Fat to Lose to Reach Ideal in Kg
+                const idealBodyFatMass = (idealBodyFat / 100) * weight;
+                const bodyFatToLose = bodyFatMass - idealBodyFatMass;
+
+                // Calculate Body Fat Percentage using BMI method
+                const bmi = weight / (height / 100) ** 2;
+                let bodyFatBmi;
+                if (sex === "male") {
+                    bodyFatBmi = 1.2 * bmi + 0.23 * age - 16.2;
+                } else {
+                    bodyFatBmi = 1.2 * bmi + 0.23 * age - 5.4;
+                }
+
+                // Determine Body Fat Category
+                let bodyFatCategory;
+                if (bodyFatPercentage < 6) bodyFatCategory = "Essential fat";
+                else if (bodyFatPercentage < 14) bodyFatCategory = "Athletes";
+                else if (bodyFatPercentage < 24) bodyFatCategory = "Fitness";
+                else if (bodyFatPercentage < 31) bodyFatCategory = "Acceptable";
+                else bodyFatCategory = "Obesity";
+
+                // Output results
+                const results = `
+            <div>${languageSelect.value === "en" ? "Body Fat (U.S. Navy Method):" : "Grasa Corporal (Método de la Marina de EE.UU.):"} ${bodyFatPercentage.toFixed(2)}%</div>
+            <div>${languageSelect.value === "en" ? "Body Fat Category:" : "Categoría de Grasa Corporal:"} ${bodyFatCategory}</div>
+            <div>${languageSelect.value === "en" ? "Body Fat Mass:" : "Masa de Grasa Corporal:"} ${bodyFatMass.toFixed(2)} kg</div>
+            <div>${languageSelect.value === "en" ? "Lean Body Mass:" : "Masa Corporal Magra:"} ${leanBodyMass.toFixed(2)} kg</div>
+            <div>${languageSelect.value === "en" ? "Ideal Body Fat for Given Age:" : "Grasa Corporal Ideal para la Edad:"} ${idealBodyFat.toFixed(2)}%</div>
+            <div>${languageSelect.value === "en" ? "Body Fat to Lose to Reach Ideal:" : "Grasa Corporal a Perder para Alcanzar Ideal:"} ${bodyFatToLose.toFixed(2)} kg</div>
+            <div>${languageSelect.value === "en" ? "Body Fat (BMI method):" : "Grasa Corporal (método de IMC):"} ${bodyFatBmi.toFixed(2)}%</div>
+        `;
+                resultDiv.innerHTML = results;
+            });
+        </script>
+    </body>
+</html>
